@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from pytils.translit import slugify
 
-from .models import Post, Comment
+from .models import Comment, Post
 
 
 class PostForm(forms.ModelForm):

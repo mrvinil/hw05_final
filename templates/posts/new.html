@@ -1,7 +1,6 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block title %}{% if is_edit %} Редактировать запись {% else %} Новый пост {% endif %}{% endblock %}
 {% block content %}
-    {# загружаем фильтр #}
     {% load user_filters %}
 
     <div class="row justify-content-center">
@@ -26,8 +25,7 @@
                                 {{ field.label }}{% if field.field.required %}<span class="required">*</span>{% endif %}
                             </label>
                             <div class="col-md-6">
-                                {# подключаем фильтр и указываем класс #}
-                                {{ field|addclass:"form-control" }}
+                                {{ field|addclass:'form-control' }}
 
                                 {% if field.help_text %}
                                     <small id="{{ field.id_for_label }}-help"
@@ -43,9 +41,9 @@
                             </button>
                         </div>
                     </form>
-                </div> <!-- card body -->
-            </div> <!-- card -->
-        </div> <!-- col -->
-    </div> <!-- row -->
+                </div>
+            </div>
+        </div>
+    </div>
 
 {% endblock %}

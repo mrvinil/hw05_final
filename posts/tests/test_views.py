@@ -1,22 +1,25 @@
 import shutil
 import tempfile
 
-from django.conf import settings
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from posts.models import Group, Post, User
+from posts.models import Comment, Follow, Group, Post, User
+from yatube.settings import BASE_DIR
 
 SMALL_GIF = (
-            b'\x47\x49\x46\x38\x39\x61\x01\x00'
-            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
-            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
-            b'\x00\x00\x01\x00\x01\x00\x00\x02'
-            b'\x02\x4c\x01\x00\x3b'
-        )
+    b'\x47\x49\x46\x38\x39\x61\x01\x00'
+    b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+    b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+    b'\x00\x00\x01\x00\x01\x00\x00\x02'
+    b'\x02\x4c\x01\x00\x3b'
+)
+
+MEDIA_ROOT = tempfile.mkdtemp(dir=BASE_DIR)
 
 
 class GroupPagesTests(TestCase):
@@ -24,6 +27,7 @@ class GroupPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create(username='leo')
+        cls.another_user = User.objects.create(username='esenin')
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -59,7 +63,8 @@ class GroupPagesTests(TestCase):
                 reverse('posts:group', kwargs={'slug': self.group.slug})
             ),
             'profile.html':
-                reverse("posts:profile", kwargs={'username': self.post.author}),
+                reverse("posts:profile",
+                        kwargs={'username': self.post.author}),
             'posts/post.html':
                 reverse("posts:post", kwargs={'username': self.post.author,
                                               'post_id': self.post.id})
@@ -155,6 +160,23 @@ class GroupPagesTests(TestCase):
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertTrue(Post.objects.filter(text=self.post.text).exists())
 
+    def test_authorised_user_can_comment(self):
+        """Только авторизированный пользователь может комментировать посты."""
+        comments_count = Comment.objects.count()
+        form_data = {
+            'text': 'Тестовый комментарий'
+        }
+        self.authorized_client.post(
+            reverse('posts:add_comment',
+                    kwargs={'username': self.post.author,
+                            'post_id': self.post.id}),
+            data=form_data,
+            follow=True,
+
+        )
+        comments_count_after = Comment.objects.count()
+        self.assertEqual(comments_count + 1, comments_count_after)
+
     def test_cache(self):
         """Тестируем кеширование"""
         post = Post.objects.create(
@@ -200,6 +222,7 @@ class PaginatorViewsTest(TestCase):
         self.assertEqual(len(response.context.get('page').object_list), 3)
 
 
+@override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class PageImgTest(TestCase):
     """Тесты с картинками"""
     @classmethod
@@ -237,7 +260,8 @@ class PageImgTest(TestCase):
     def test_index_with_img_show_context(self):
         """Шаблон index отображает картинки в контексте"""
         response = self.guest_client.get(reverse('posts:index'))
-        self.assertEqual(response.context.get('posts')[0].image, self.post.image)
+        self.assertEqual(response.context.get('posts')[0].image,
+                         self.post.image)
 
     def test_profile_with_img_show_context(self):
         """Шаблон profile отображает картинки в контексте"""
@@ -249,7 +273,8 @@ class PageImgTest(TestCase):
         """Шаблон group отображает картинки в контексте"""
         response = self.guest_client.get(
             reverse('posts:group', kwargs={'slug': self.group.slug}))
-        self.assertEqual(response.context.get('page')[0].image, self.post.image)
+        self.assertEqual(response.context.get('page')[0].image,
+                         self.post.image)
 
     def test_post_with_img_show_context(self):
         """Шаблон post отображает картинки в контексте"""
@@ -260,3 +285,36 @@ class PageImgTest(TestCase):
                         'post_id': self.post.id}))
 
         self.assertEqual(response.context.get('post').image, self.post.image)
+
+
+class TestFollows(TestCase):
+    def setUp(self):
+        self.client_auth_follower = Client()
+        self.client_auth_following = Client()
+
+        self.user_follower = User.objects.create_user(
+            username='follower',
+            email='follower@follower.follower',
+            password='str0ngPassw0rd'
+        )
+        self.user_following = User.objects.create_user(
+            username='following',
+            email='following@following.following',
+            password='veryStr0ngPassw0rd'
+        )
+        self.client_auth_follower.force_login(self.user_follower)
+        self.client_auth_following.force_login(self.user_following)
+
+    def test_authorised_user_can_follow_unfollow(self):
+        """Авторизованный пользователь может подписываться на других
+        пользователей и удалять их из подписок.
+        """
+        before = Follow.objects.all().count()
+        self.client_auth_follower.get(
+            reverse(
+                'index:profile_follow',
+                kwargs={'username': self.user_following.username}
+            )
+        )
+        after = Follow.objects.all().count()
+        self.assertEqual(before + 1, after)

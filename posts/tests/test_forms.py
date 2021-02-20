@@ -2,13 +2,14 @@ import shutil
 import tempfile
 
 from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from posts.forms import PostForm
 from posts.models import Group, Post
+from yatube.settings import BASE_DIR
 
 User = get_user_model()
 
@@ -20,7 +21,10 @@ SMALL_GIF = (
             b'\x02\x4c\x01\x00\x3b'
         )
 
+MEDIA_ROOT = tempfile.mkdtemp(dir=BASE_DIR)
 
+
+@override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class PostCreateFormTests(TestCase):
     group = None
 

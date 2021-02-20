@@ -8,7 +8,7 @@
             <h5 class="card-header">Добавить комментарий:</h5>
             <div class="card-body">
                 <div class="form-group">
-                    {{ form.text|addclass:"form-control" }}
+                    {{ form.text|addclass:'form-control' }}
                     {% if form.text.help_text %}
                         <small id="{{ field.id_for_label }}-help"
                                class="form-text text-muted">{{ form.text.help_text|safe }}</small>
@@ -33,7 +33,7 @@
                 </a>
             </h5>
             <p>{{ comment.text | linebreaksbr }}</p>
-            <small class="text-muted">{{ comment.created|date:"d M Y" }}</small>
+            <small class="text-muted">{{ comment.created|date:'d M Y' }}</small>
         </div>
     </div>
 {% endfor %}

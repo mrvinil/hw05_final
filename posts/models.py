@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import UniqueConstraint
 from pytils.translit import slugify
 
 User = get_user_model()
@@ -75,3 +76,18 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ['-created']
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(User, verbose_name='Подписчик',
+                             on_delete=models.CASCADE,
+                             related_name='follower')
+    author = models.ForeignKey(User, verbose_name='Автор',
+                               on_delete=models.CASCADE,
+                               related_name='following')
+
+    class Meta:
+        UniqueConstraint(
+            name='unique_follow',
+            fields=['user', 'author']
+        )

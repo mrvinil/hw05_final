@@ -1,15 +1,14 @@
 {% extends 'base.html' %}
-{% block title %}Последние обновления на сайте{% endblock %}
-{% block header %}Последние обновления на сайте{% endblock %}
+{% block title %}Посты любимых авторов{% endblock %}
+{% block header %}Посты любимых авторов{% endblock %}
 
 {% block content %}
-    {% include 'includes/menu.html' with index=True %}
-    {% load cache %}
-    {% cache 20 index_page %}
+    {% include 'includes/menu.html' with follow=True %}
+
         {% for post in page %}
             {% include 'includes/post_item.html' with post=post %}
         {% endfor %}
-    {% endcache %}
+
     {% if page.has_other_pages %}
         {% include 'includes/paginator.html' with items=page paginator=paginator %}
     {% endif %}
