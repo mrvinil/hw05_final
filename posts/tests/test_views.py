@@ -225,6 +225,7 @@ class PaginatorViewsTest(TestCase):
 @override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class PageImgTest(TestCase):
     """Тесты с картинками"""
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -287,7 +288,7 @@ class PageImgTest(TestCase):
         self.assertEqual(response.context.get('post').image, self.post.image)
 
 
-class TestFollows(TestCase):
+class TestFollowUnfollow(TestCase):
     def setUp(self):
         self.client_auth_follower = Client()
         self.client_auth_following = Client()
@@ -318,3 +319,70 @@ class TestFollows(TestCase):
         )
         after = Follow.objects.all().count()
         self.assertEqual(before + 1, after)
+
+
+class TestFollowTape(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.author = User.objects.create(
+            username='author'
+        )
+        cls.author_second = User.objects.create(
+            username='author_second'
+        )
+        cls.group1 = Group.objects.create(
+            title='test_title1',
+            slug='test_slug1',
+            description='test_desc1'
+        )
+
+        cls.post = Post.objects.create(
+            text='test_text',
+            author=cls.author,
+            group=cls.group1
+        )
+
+        cls.post_second = Post.objects.create(
+            text='test_text',
+            author=cls.author_second
+        )
+
+    def setUp(self):
+        self.guest_client = Client()
+
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.author)
+
+    def test_new_post_exist_for_followers(self):
+        """Новая запись пользователя появляется в ленте тех, кто на него
+        подписан и не появляется в ленте тех, кто не подписан на него.
+        """
+        response = self.authorized_client.get(reverse('posts:follow_index'))
+        cnt_posts = len(response.context['page'])
+        self.assertEqual(cnt_posts, 0)
+
+        self.authorized_client.post(
+            reverse('posts:profile_follow', args=[self.author_second]))
+        followings = Follow.objects.filter(
+            user=self.author,
+            author=self.author_second
+        )
+        self.assertEqual(followings.count(), 1)
+
+        response = self.authorized_client.get(reverse('posts:follow_index'))
+        cnt_posts = len(response.context['page'])
+        self.assertEqual(cnt_posts, 1)
+
+        self.authorized_client.post(
+            reverse('posts:profile_unfollow', args=[self.author_second])
+        )
+        followings = Follow.objects.filter(
+            user=self.author,
+            author=self.author_second
+        )
+        self.assertEqual(followings.count(), 0)
+
+        response = self.authorized_client.get(reverse('posts:follow_index'))
+        cnt_posts = len(response.context['page'])
+        self.assertEqual(cnt_posts, 0)
