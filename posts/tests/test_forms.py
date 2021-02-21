@@ -89,9 +89,16 @@ class PostCreateFormTests(TestCase):
         """При редактировании поста, изменяется запись в базе данных."""
         posts_count = Post.objects.count()
 
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
+
         form_data = {
             'text': 'Измененный пост',
             'group': self.group.id,
+            'image': uploaded,
         }
         test_post = Post.objects.create(
             text='Тестовый текст записи',

@@ -320,6 +320,32 @@ class TestFollowUnfollow(TestCase):
         after = Follow.objects.all().count()
         self.assertEqual(before + 1, after)
 
+    def test_authorised_user_can_follow(self):
+        """Авторизованный пользователь может подписываться на других
+        пользователей.
+        """
+        followings = Follow.objects.filter(
+            user=self.user_follower,
+            author=self.user_following
+        )
+        self.client_auth_follower.post(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.user_following})
+        )
+        self.assertEqual(followings.count(), 1)
+
+    def test_authorised_user_can_unfollow(self):
+        """Авторизованный пользователь может удалять из подписок авторов."""
+        followings = Follow.objects.filter(
+            user=self.user_follower,
+            author=self.user_following
+        )
+        self.client_auth_follower.post(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.user_following})
+        )
+        self.assertEqual(followings.count(), 0)
+
 
 class TestFollowTape(TestCase):
     @classmethod
@@ -356,14 +382,15 @@ class TestFollowTape(TestCase):
 
     def test_new_post_exist_for_followers(self):
         """Новая запись пользователя появляется в ленте тех, кто на него
-        подписан и не появляется в ленте тех, кто не подписан на него.
+        подписан.
         """
         response = self.authorized_client.get(reverse('posts:follow_index'))
         cnt_posts = len(response.context['page'])
         self.assertEqual(cnt_posts, 0)
 
         self.authorized_client.post(
-            reverse('posts:profile_follow', args=[self.author_second]))
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.author_second}))
         followings = Follow.objects.filter(
             user=self.author,
             author=self.author_second
@@ -374,8 +401,13 @@ class TestFollowTape(TestCase):
         cnt_posts = len(response.context['page'])
         self.assertEqual(cnt_posts, 1)
 
+    def test_new_post_exist_for_followers_unfollow(self):
+        """Новая запись пользователя не появляется в ленте тех, кто не
+        подписан на него.
+        """
         self.authorized_client.post(
-            reverse('posts:profile_unfollow', args=[self.author_second])
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.author_second})
         )
         followings = Follow.objects.filter(
             user=self.author,

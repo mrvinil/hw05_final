@@ -57,6 +57,11 @@ class StaticURLTests(TestCase):
         response = self.authorized_client.get('/new/')
         self.assertEqual(response.status_code, 200)
 
+    def test_follow_url_exists_at_desired_location_authorization(self):
+        """Страница /follow/ доступна авторизованному пользователю."""
+        response = self.authorized_client.get('/follow/')
+        self.assertEqual(response.status_code, 200)
+
     def test_new_url_redirect_anonymous(self):
         """Страница /new/ перенаправляет анонимного пользователя на
         страницу логина, а после успешного входа, возвращает обратно на /new/.
