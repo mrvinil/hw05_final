@@ -5,9 +5,9 @@
     {% endthumbnail %}
     <div class="card-body">
         <p class="card-text">
-                <a name="post_{{ post.id }}" href="{% url 'posts:profile' post.author.username %}">
-                    <strong class="d-block text-gray-dark">@{{ post.author }}</strong>
-                </a>
+            <a name="post_{{ post.id }}" href="{% url 'posts:profile' post.author.username %}">
+                <strong class="d-block text-gray-dark">@{{ post.author }}</strong>
+            </a>
             {{ post.text|linebreaksbr }}
         </p>
         <!-- Если пост относится к какому-нибудь сообществу, то отобразим ссылку на него через # -->
@@ -23,7 +23,8 @@
                 {% endif %}
                 <div>
                     {% if not display_add_comment %}
-                        <a class="btn btn-sm btn-primary" href="{% url 'posts:post' post.author.username post.id %}" role="button">Добавить комментарий</a>
+                        <a class="btn btn-sm btn-primary" href="{% url 'posts:post' post.author.username post.id %}"
+                           role="button">Добавить комментарий</a>
                     {% endif %}
 
                     {% if user == post.author %}
